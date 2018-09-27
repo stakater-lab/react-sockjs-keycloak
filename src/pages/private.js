@@ -46,6 +46,9 @@ const styles = theme => ({
   greenIcon: {
     color: '#fff',
     backgroundColor: green[500],
+  },
+  warningMessage: {
+    color: '#f00'
   }
 });
 
@@ -56,7 +59,7 @@ class Private extends Component {
   
   constructor(props) {
     super(props);
-    this.state = { keycloak: null, authenticated: false, user: null, userList: [], selectedIndex: -1, message: null };
+    this.state = { keycloak: null, authenticated: false, user: null, userList: [], selectedHealthCenter: null, message: null };
   }
 
   componentDidMount() {
@@ -67,21 +70,21 @@ class Private extends Component {
         var socket = new window.SockJS('http://localhost:9002/ws');
         stompClient = window.Stomp.over(socket);
         stompClient.connect({ 'username': this.state.user.preferred_username, id: this.state.user.sub},  (frame) => {
-          console.log('Connected: ' + frame);
+          // console.log('Connected: ' + frame);
         });
       });
     })
   }
 
-
-  handleConnect = (channelId, selectedIndex) => {
+  handleConnect = (channelId) => {
    var subscription = stompClient.subscribe('/topic/'+ channelId +'/connected.users',  (channels) => {
                         this.setState({userList: Object.assign(JSON.parse(channels.body))})
-                        openSnackbar({message : new Date().toISOString()});
+                        if(this.state.userList.length>1) {
+                          openSnackbar({message :'New user has joined' });
+                        }
                       });
 
-    this.setState({selectedIndex : selectedIndex});
-  
+    this.setState({selectedHealthCenterId : channelId});
     this.subscribeChannel(channelId, this.state.user.sub);
     subscriptions.push(subscription);
   };
@@ -119,22 +122,22 @@ class Private extends Component {
                 <h5>Health Center</h5>
                 {/* Health Center */}
                 <List component="nav" >
-                  <ListItem button selected={this.state.selectedIndex === 0}>
+                  <ListItem button selected={this.state.selectedHealthCenterId === 'Ch-6c5b5a2a-add1'}>
                     <Avatar className={classes.pinkIcon}>
                       <WorkIcon />
                     </Avatar>
-                    <ListItemText primary="Health Center 1" secondary="Ch-6c5b5a2a-add1" onClick={() => { this.handleConnect('Ch-6c5b5a2a-add1', 0) }} />
+                    <ListItemText primary="Health Center 1" secondary="Ch-6c5b5a2a-add1" onClick={() => { this.handleConnect('Ch-6c5b5a2a-add1') }} />
                     <ListItemSecondaryAction onClick={() => { this.handleLeave('Ch-6c5b5a2a-add1') }}>
                       <IconButton aria-label="Leave">
                         <DeleteSweep />
                       </IconButton>
                     </ListItemSecondaryAction>
                   </ListItem>
-                  <ListItem button  selected={this.state.selectedIndex === 1}>
+                  <ListItem button  selected={this.state.selectedHealthCenterId === 'Ch-6c5b5a2a-add2'}>
                     <Avatar className={classes.pinkIcon}>
                       <WorkIcon />
                     </Avatar>
-                    <ListItemText primary="Health Center 2" secondary="Ch-6c5b5a2a-add2" onClick={() => { this.handleConnect('Ch-6c5b5a2a-add2', 1) }} />
+                    <ListItemText primary="Health Center 2" secondary="Ch-6c5b5a2a-add2" onClick={() => { this.handleConnect('Ch-6c5b5a2a-add2') }} />
                     <ListItemSecondaryAction onClick={() => { this.handleLeave('Ch-6c5b5a2a-add2') }}>
                       <IconButton aria-label="Leave">
                         <DeleteSweep />
@@ -149,40 +152,77 @@ class Private extends Component {
               <h5>Appointments</h5>
 
               {/* Appointments */}
-              { this.state.selectedIndex >= 0 &&
+              { this.state.selectedHealthCenterId  &&
               <List component="nav">
-                  <ListItem button>
-                    <Avatar className={classes.greenIcon}>
-                      <Assignment />
-                    </Avatar>
-                    <ListItemText primary="Appointment 1" secondary="Start time: 12:30 PM" onClick={() => { this.handleConnect('Ch-6c5b5a2a-add3') }} />
-                    <ListItemSecondaryAction onClick={() => { this.handleLeave('Ch-6c5b5a2a-ad31') }}>
-                      <IconButton aria-label="Leave">
-                        <DeleteSweep />
-                      </IconButton>
-                    </ListItemSecondaryAction>
-                  </ListItem>
-                  <ListItem button>
-                    <Avatar className={classes.greenIcon}>
-                      <Assignment />
-                    </Avatar>
-                    <ListItemText primary="Appointment 2" secondary="Start time: 02:00 PM" onClick={() => { this.handleConnect('Ch-6c5b5a2a-add4') }} />
-                    <ListItemSecondaryAction onClick={() => { this.handleLeave('Ch-6c5b5a2a-add4') }}>
-                      <IconButton aria-label="Leave">
-                        <DeleteSweep />
-                      </IconButton>
-                    </ListItemSecondaryAction>
-                  </ListItem>
+                  { this.state.selectedHealthCenterId === 'Ch-6c5b5a2a-add1' &&
+                    <ListItem button>
+                      <Avatar className={classes.greenIcon}>
+                        <Assignment />
+                      </Avatar>
+                      <ListItemText primary="Appointment 1" secondary="Start time: 01:00 PM" onClick={() => { this.handleConnect('Ch-6c5b5a2a-add3') }} />
+                      <ListItemSecondaryAction onClick={() => { this.handleLeave('Ch-6c5b5a2a-add3') }}>
+                        <IconButton aria-label="Leave">
+                          <DeleteSweep />
+                        </IconButton>
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                   }
+
+                  { this.state.selectedHealthCenterId === 'Ch-6c5b5a2a-add2' &&
+                    <ListItem button>
+                      <Avatar className={classes.greenIcon}>
+                        <Assignment />
+                      </Avatar>
+                      <ListItemText primary="Appointment 2" secondary="Start time: 02:00 PM" onClick={() => { this.handleConnect('Ch-6c5b5a2a-add4') }} />
+                      <ListItemSecondaryAction onClick={() => { this.handleLeave('Ch-6c5b5a2a-add4') }}>
+                        <IconButton aria-label="Leave">
+                          <DeleteSweep />
+                        </IconButton>
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                  }
+
+                  { this.state.selectedHealthCenterId === 'Ch-6c5b5a2a-add1' &&
+                    <ListItem button>
+                      <Avatar className={classes.greenIcon}>
+                        <Assignment />
+                      </Avatar>
+                      <ListItemText primary="Appointment 3" secondary="Start time: 10:00 AM" onClick={() => { this.handleConnect('Ch-6c5b5a2a-add5') }} />
+                      <ListItemSecondaryAction onClick={() => { this.handleLeave('Ch-6c5b5a2a-add5') }}>
+                        <IconButton aria-label="Leave">
+                          <DeleteSweep />
+                        </IconButton>
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                  }
+
+                  { this.state.selectedHealthCenterId === 'Ch-6c5b5a2a-add2' &&
+                    <ListItem button>
+                      <Avatar className={classes.greenIcon}>
+                        <Assignment />
+                      </Avatar>
+                      <ListItemText primary="Appointment 4" secondary="Start time: 11:00 AM" onClick={() => { this.handleConnect('Ch-6c5b5a2a-add6') }} />
+                      <ListItemSecondaryAction onClick={() => { this.handleLeave('Ch-6c5b5a2a-add6') }}>
+                        <IconButton aria-label="Leave">
+                          <DeleteSweep />
+                        </IconButton>
+                      </ListItemSecondaryAction>
+                    </ListItem>
+                  }
+
                 </List>
                }
 
-               { this.state.selectedIndex === -1 &&
-                <h4>No health center is selected.</h4>
+               { this.state.selectedHealthCenterId === null &&
+                <h4 className={classes.warningMessage}>No health center is selected.</h4>
                }
               </div>
 
             </div>
+
+            {/* Inject Notifier */}
             <Notifier />
+
           </div> );
       } else {
         return (<div>Unable to authenticate!</div>)

@@ -31,6 +31,9 @@ const styles = theme => ({
     display: 'flex',
     justifyContent: 'center',
   },
+  warningMessage: {
+    color: '#f00'
+  }
 });
 
 
@@ -69,9 +72,9 @@ class LetterAvatarList extends Component {
                 }
               } else {
                 if (this.props.users.length === 1) {
-                  return <h4 key={ index }>You are first one here</h4>;
+                  return <h4 key={ index }>You are the first one here</h4>;
                 } else {
-                  return;
+                  return <span key={ index }></span>;
                 }
               }
             })
@@ -79,7 +82,7 @@ class LetterAvatarList extends Component {
         </div>
       );
     } else {
-      return <h4>No Users Connected to any channel</h4>;
+      return <h4 className={classes.warningMessage}>No users connected to any channel</h4>;
     }
   }
 }
