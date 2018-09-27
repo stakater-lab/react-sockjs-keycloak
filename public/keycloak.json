@@ -1,0 +1,8 @@
+{
+  "realm": "lab",
+  "auth-server-url": "https://keycloak.cp.lab187.k8syard.com/auth",
+  "ssl-required": "external",
+  "resource": "webapp",
+  "public-client": true,
+  "confidential-port": 0
+}
