@@ -18,6 +18,7 @@ import IconButton from '@material-ui/core/IconButton';
 import MenuIcon from '@material-ui/icons/Menu';
 import PowerSettingsNew from '@material-ui/icons/PowerSettingsNew';
 
+import store from './store';
 
 const styles = theme => ({
   root: {
@@ -34,6 +35,21 @@ const styles = theme => ({
 });
 
 class App extends Component {
+
+  state = {
+    loggedIn: false,
+    user: null
+  };
+   
+  componentDidMount() {
+   store.subscribe(() => {
+        this.setState({ loggedIn : store.getState().authentication.loggedIn })
+        this.setState({ user : store.getState().user })
+        console.log(store.getState());
+      }
+    );
+  }
+
 
   render() {
     const { classes } = this.props;
@@ -57,18 +73,22 @@ class App extends Component {
                   <Button  component={Link} to="/private" className={classes.menuButton}  >
                     Private
                   </Button>
-                   <IconButton  onClick={ () => this.logout() } color="inherit">
-                      <PowerSettingsNew />
-                   </IconButton>
+                  {this.state.loggedIn && ( 
+                    <IconButton  onClick={ () => this.logout() } color="inherit">
+                        <PowerSettingsNew />
+                    </IconButton>   
+                  )}                
               </Toolbar>
             </AppBar>
           </div>
 
           <header className="App-header">
             <img src={logo} className="App-logo" alt="logo" />
-            {/* <h1 className="App-title"> Keycloak with Web Sockets</h1> */}
-            {/* <h1>Hello, {this.state.user.name}</h1> */}
-            <h1>Hello, User</h1>
+            {
+              this.state.user && (
+                <h1 className="App-title">Hello, { this.state.user.name }</h1>
+              )
+            }
 
           </header>
 

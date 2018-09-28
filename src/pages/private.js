@@ -23,6 +23,9 @@ import pink from '@material-ui/core/colors/pink';
 import green from '@material-ui/core/colors/green';
 
 import { withStyles } from '@material-ui/core/styles';
+import store from '../store';
+import { loginSuccess } from '../store/actions/authentication.actions';
+import { userSuccess } from '../store/actions/user.actions';
 
 const styles = theme => ({
   root: {
@@ -59,18 +62,54 @@ class Private extends Component {
   
   constructor(props) {
     super(props);
-    this.state = { keycloak: null, authenticated: false, user: null, userList: [], selectedHealthCenter: null, message: null };
+    this.state = { 
+      keycloak: null, 
+      authenticated: false, 
+      user: null, 
+      userList: [], 
+      selectedHealthCenter: null, 
+      message: null,
+      appointments: [
+        { 
+          id: 'Ch-sub-6c5b5a2a-add1',
+          title: 'Appointment 1',
+          startTime: new Date(2018,9,1,1,1,0),
+          healthCenterId: 'Ch-6c5b5a2a-add1'
+        },
+        { 
+          id: 'Ch-sub-6c5b5a2a-add2',
+          title: 'Appointment 2',
+          startTime: new Date(2018,10,2,1,1,0),
+          healthCenterId: 'Ch-6c5b5a2a-add1'
+        },
+        { 
+          id: 'Ch-sub-6c5b5a2a-add3',
+          title: 'Appointment 3',
+          startTime: new Date(2018,12,3,1,1,0),
+          healthCenterId: 'Ch-6c5b5a2a-add2'
+        },
+        { 
+          id: 'Ch-sub-6c5b5a2a-add4',
+          title: 'Appointment 4',
+          startTime: new Date(2018,19,4,1,1,0),
+          healthCenterId: 'Ch-6c5b5a2a-add3'
+        },
+      ]
+    };
   }
 
   componentDidMount() {
     const keycloak = Keycloak('/keycloak.json');
     keycloak.init({onLoad: 'login-required', checkLoginIframe: false}).then(authenticated => {
+      store.dispatch(loginSuccess());
       keycloak.loadUserInfo().then(userInfo => {
         this.setState({ keycloak: keycloak, authenticated: authenticated, user: userInfo });
+        store.dispatch(userSuccess(userInfo));
+
         var socket = new window.SockJS('http://localhost:9002/ws');
         stompClient = window.Stomp.over(socket);
-        stompClient.connect({ 'username': this.state.user.preferred_username, id: this.state.user.sub},  (frame) => {
-          // console.log('Connected: ' + frame);
+        stompClient.connect({ Authorization: "Bearer " + keycloak.token},  (frame) => {
+          console.log('Connected: ' + frame);
         });
       });
     })
@@ -85,16 +124,25 @@ class Private extends Component {
                       });
 
     this.setState({selectedHealthCenterId : channelId});
-    this.subscribeChannel(channelId, this.state.user.sub);
+    this.subscribeChannel(channelId);
     subscriptions.push(subscription);
   };
 
-  subscribeChannel(channelId, userSubId) {
-    stompClient.send("/app/channels/join",{}, channelId + ':' + userSubId);
+  subscribeChannel(channelId) {
+    stompClient.send("/app/channels/join",{}, channelId);
   }
 
-  handleLeave = (channelId) => {
-    stompClient.send("/app/channels/leave",{}, channelId + ':' + this.state.user.sub);
+  handleChannelLeave = (channelId) => {
+    stompClient.send("/app/channels/leave",{}, channelId);
+  }
+
+
+  subscribeSubChannel(subChannelId) {
+    stompClient.send("/app/subchannels/join",{}, subChannelId);
+  }
+
+  handleSubChannelLeave = (subChannelId) => {
+    stompClient.send("/app/subchannels/leave",{}, subChannelId);
   }
 
   unsubscribeChannel() {
@@ -127,7 +175,7 @@ class Private extends Component {
                       <WorkIcon />
                     </Avatar>
                     <ListItemText primary="Health Center 1" secondary="Ch-6c5b5a2a-add1" onClick={() => { this.handleConnect('Ch-6c5b5a2a-add1') }} />
-                    <ListItemSecondaryAction onClick={() => { this.handleLeave('Ch-6c5b5a2a-add1') }}>
+                    <ListItemSecondaryAction onClick={() => { this.handleChannelLeave('Ch-6c5b5a2a-add1') }}>
                       <IconButton aria-label="Leave">
                         <DeleteSweep />
                       </IconButton>
@@ -138,7 +186,7 @@ class Private extends Component {
                       <WorkIcon />
                     </Avatar>
                     <ListItemText primary="Health Center 2" secondary="Ch-6c5b5a2a-add2" onClick={() => { this.handleConnect('Ch-6c5b5a2a-add2') }} />
-                    <ListItemSecondaryAction onClick={() => { this.handleLeave('Ch-6c5b5a2a-add2') }}>
+                    <ListItemSecondaryAction onClick={() => { this.handleChannelLeave('Ch-6c5b5a2a-add2') }}>
                       <IconButton aria-label="Leave">
                         <DeleteSweep />
                       </IconButton>
@@ -152,66 +200,27 @@ class Private extends Component {
               <h5>Appointments</h5>
 
               {/* Appointments */}
-              { this.state.selectedHealthCenterId  &&
               <List component="nav">
-                  { this.state.selectedHealthCenterId === 'Ch-6c5b5a2a-add1' &&
-                    <ListItem button>
-                      <Avatar className={classes.greenIcon}>
-                        <Assignment />
-                      </Avatar>
-                      <ListItemText primary="Appointment 1" secondary="Start time: 01:00 PM" onClick={() => { this.handleConnect('Ch-6c5b5a2a-add3') }} />
-                      <ListItemSecondaryAction onClick={() => { this.handleLeave('Ch-6c5b5a2a-add3') }}>
-                        <IconButton aria-label="Leave">
-                          <DeleteSweep />
-                        </IconButton>
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                   }
+                {this.state.appointments
+                  .filter(appointment => appointment.healthCenterId === this.state.selectedHealthCenterId)
+                  .map((appointment, index) => {
+                      return (
+                        <ListItem button key={index}>
+                          <Avatar className={classes.greenIcon}>
+                            <Assignment />
+                          </Avatar>
+                          <ListItemText primary={ appointment.title } secondary={appointment.startTime.toDateString()} onClick={() => { this.subscribeSubChannel(appointment.id) }} />
+                          <ListItemSecondaryAction onClick={() => { this.handleSubChannelLeave(appointment.id) }}>
+                            <IconButton aria-label="Leave">
+                              <DeleteSweep />
+                            </IconButton>
+                          </ListItemSecondaryAction>
+                        </ListItem>
+                      );
+                  })}
 
-                  { this.state.selectedHealthCenterId === 'Ch-6c5b5a2a-add2' &&
-                    <ListItem button>
-                      <Avatar className={classes.greenIcon}>
-                        <Assignment />
-                      </Avatar>
-                      <ListItemText primary="Appointment 2" secondary="Start time: 02:00 PM" onClick={() => { this.handleConnect('Ch-6c5b5a2a-add4') }} />
-                      <ListItemSecondaryAction onClick={() => { this.handleLeave('Ch-6c5b5a2a-add4') }}>
-                        <IconButton aria-label="Leave">
-                          <DeleteSweep />
-                        </IconButton>
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                  }
-
-                  { this.state.selectedHealthCenterId === 'Ch-6c5b5a2a-add1' &&
-                    <ListItem button>
-                      <Avatar className={classes.greenIcon}>
-                        <Assignment />
-                      </Avatar>
-                      <ListItemText primary="Appointment 3" secondary="Start time: 10:00 AM" onClick={() => { this.handleConnect('Ch-6c5b5a2a-add5') }} />
-                      <ListItemSecondaryAction onClick={() => { this.handleLeave('Ch-6c5b5a2a-add5') }}>
-                        <IconButton aria-label="Leave">
-                          <DeleteSweep />
-                        </IconButton>
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                  }
-
-                  { this.state.selectedHealthCenterId === 'Ch-6c5b5a2a-add2' &&
-                    <ListItem button>
-                      <Avatar className={classes.greenIcon}>
-                        <Assignment />
-                      </Avatar>
-                      <ListItemText primary="Appointment 4" secondary="Start time: 11:00 AM" onClick={() => { this.handleConnect('Ch-6c5b5a2a-add6') }} />
-                      <ListItemSecondaryAction onClick={() => { this.handleLeave('Ch-6c5b5a2a-add6') }}>
-                        <IconButton aria-label="Leave">
-                          <DeleteSweep />
-                        </IconButton>
-                      </ListItemSecondaryAction>
-                    </ListItem>
-                  }
 
                 </List>
-               }
 
                { this.state.selectedHealthCenterId === null &&
                 <h4 className={classes.warningMessage}>No health center is selected.</h4>
