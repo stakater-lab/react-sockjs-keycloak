@@ -26,6 +26,7 @@ import { withStyles } from '@material-ui/core/styles';
 import store from '../store';
 import { loginSuccess } from '../store/actions/authentication.actions';
 import { userSuccess } from '../store/actions/user.actions';
+import { keycloakSuccess } from '../store/actions/keycloak.actions';
 
 const styles = theme => ({
   root: {
@@ -100,6 +101,7 @@ class Private extends Component {
 
   componentDidMount() {
     const keycloak = Keycloak('/keycloak.json');
+    store.dispatch(keycloakSuccess(keycloak));
     keycloak.init({onLoad: 'login-required', checkLoginIframe: false}).then(authenticated => {
       store.dispatch(loginSuccess());
       keycloak.loadUserInfo().then(userInfo => {

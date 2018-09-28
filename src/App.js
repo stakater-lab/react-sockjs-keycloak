@@ -38,14 +38,15 @@ class App extends Component {
 
   state = {
     loggedIn: false,
-    user: null
+    user: null,
+    keycloak: null
   };
    
   componentDidMount() {
    store.subscribe(() => {
         this.setState({ loggedIn : store.getState().authentication.loggedIn })
         this.setState({ user : store.getState().user })
-        console.log(store.getState());
+        this.setState({ keycloak: store.getState().keycloak})
       }
     );
   }
@@ -74,7 +75,7 @@ class App extends Component {
                     Private
                   </Button>
                   {this.state.loggedIn && ( 
-                    <IconButton  onClick={ () => this.logout() } color="inherit">
+                    <IconButton  onClick={ () => this.state.keycloak.logout() } color="inherit">
                         <PowerSettingsNew />
                     </IconButton>   
                   )}                
