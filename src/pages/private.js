@@ -68,6 +68,7 @@ class Private extends Component {
       authenticated: false, 
       user: null, 
       userList: [], 
+      appointmentUserList: [],
       selectedHealthCenter: null, 
       message: null,
       appointments: [
@@ -108,7 +109,7 @@ class Private extends Component {
         this.setState({ keycloak: keycloak, authenticated: authenticated, user: userInfo });
         store.dispatch(userSuccess(userInfo));
 
-        var socket = new window.SockJS('http://localhost:9002/ws');
+        var socket = new window.SockJS('https://socketapp.lab.stackator.com/ws');
         stompClient = window.Stomp.over(socket);
         stompClient.connect({ Authorization: "Bearer " + keycloak.token},  (frame) => {
           console.log('Connected: ' + frame);
@@ -118,7 +119,7 @@ class Private extends Component {
   }
 
   handleConnect = (channelId) => {
-   var subscription = stompClient.subscribe('/topic/'+ channelId +'/connected.users',  (channels) => {
+   var subscription = stompClient.subscribe('/topic/'+ channelId +'.connected.users',  (channels) => {
                         this.setState({userList: Object.assign(JSON.parse(channels.body))})
                         if(this.state.userList.length>1) {
                           openSnackbar({message :'New user has joined' });
@@ -129,6 +130,18 @@ class Private extends Component {
     this.subscribeChannel(channelId);
     subscriptions.push(subscription);
   };
+
+  handleSubChannelConnect = (subChannelId) => {
+    var subscription2 = stompClient.subscribe('/topic/subchannel.'+ subChannelId +'.connected.users',  (subChannels) => {
+                         this.setState({appointmentUserList: Object.assign(JSON.parse(subChannels.body))})
+                         console.log(subChannelId + " Users: " + this.state.appointmentUserList.length);
+
+                       });
+ 
+    // this.setState({selected: subChannelId});
+     this.subscribeSubChannel(subChannelId);
+     subscriptions.push(subscription2);
+   };
 
   subscribeChannel(channelId) {
     stompClient.send("/app/channels/join",{}, channelId);
@@ -200,7 +213,7 @@ class Private extends Component {
 
             <div className={classes.mainContent}>
               <h5>Appointments</h5>
-
+              <LetterAvatarList users={this.state.appointmentUserList} currentUser={this.state.user}/>
               {/* Appointments */}
               <List component="nav">
                 {this.state.appointments
@@ -211,7 +224,7 @@ class Private extends Component {
                           <Avatar className={classes.greenIcon}>
                             <Assignment />
                           </Avatar>
-                          <ListItemText primary={ appointment.title } secondary={appointment.startTime.toDateString()} onClick={() => { this.subscribeSubChannel(appointment.id) }} />
+                          <ListItemText primary={ appointment.title } secondary={appointment.startTime.toDateString()} onClick={() => { this.handleSubChannelConnect(appointment.id) }} />
                           <ListItemSecondaryAction onClick={() => { this.handleSubChannelLeave(appointment.id) }}>
                             <IconButton aria-label="Leave">
                               <DeleteSweep />
