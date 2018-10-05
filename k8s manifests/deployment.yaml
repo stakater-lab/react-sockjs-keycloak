@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
       - name: react-sockjs-keycloak
-        image: "REPLACE_ME_APP_IMAGE"
+        image: "stakater/react-sockjs-keycloak:node-9.6.1-v0.0.1"
         ports:
         - containerPort: 8080

@@ -5,7 +5,7 @@ version: 1.0.0
 keywords:
   - stakater
   - javascript
-home: REPLACE_ME_GITHUB_LINK
+home: https://github.com/stakater-lab/react-sockjs-keycloak
 maintainers:
 - name: Stakater
   email: stakater@aurorasolutions.io
