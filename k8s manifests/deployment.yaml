@@ -17,15 +17,5 @@ spec:
       containers:
       - name: react-sockjs-keycloak
         image: "REPLACE_ME_APP_IMAGE"
-        readinessProbe:
-          httpGet:
-            path: /REPLACE_ME_HEALTH_ENDPOINT
-            port: 8080
-          initialDelaySeconds: 20
-        livenessProbe:
-          httpGet:
-            path: /REPLACE_ME_HEALTH_ENDPOINT
-            port: 8080
-          initialDelaySeconds: 20
         ports:
         - containerPort: 8080
