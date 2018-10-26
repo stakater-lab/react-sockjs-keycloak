@@ -109,7 +109,8 @@ class Private extends Component {
         this.setState({ keycloak: keycloak, authenticated: authenticated, user: userInfo });
         store.dispatch(userSuccess(userInfo));
 
-        var socket = new window.SockJS('https://socketapp.lab.stackator.com/ws');
+        // TODO: shouldn't be hardcoded
+        var socket = new window.SockJS('https://ws-be.stakater-demo.lab187.k8syard.com/ws');
         stompClient = window.Stomp.over(socket);
         stompClient.connect({ Authorization: "Bearer " + keycloak.token},  (frame) => {
           console.log('Connected: ' + frame);
