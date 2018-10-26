@@ -110,7 +110,7 @@ class Private extends Component {
         store.dispatch(userSuccess(userInfo));
 
         // TODO: shouldn't be hardcoded
-        var socket = new window.SockJS('wss://ws-be.stakater-demo.lab187.k8syard.com/ws');
+        var socket = new window.SockJS('https://ws-be.stakater-demo.lab187.k8syard.com/ws');
         stompClient = window.Stomp.over(socket);
         stompClient.connect({ Authorization: "Bearer " + keycloak.token},  (frame) => {
           console.log('Connected: ' + frame);
